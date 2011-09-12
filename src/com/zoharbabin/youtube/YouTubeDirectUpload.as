@@ -313,7 +313,7 @@ package com.zoharbabin.youtube
 			req = new URLRequest(gatewayUrlUpload + "?email="+youTubeUserEmail + 
 													"&pass="+youTubePassword +
 													"&title="+ytVideoName +
-													"&desc="+ytVideoDescription +
+													"&desc="+ytVideoDescription + ' --- This transformative remix work constitutes a fair use of any copyrighted material as provided for in section 107 of the US copyright law.' +
 													"&tags="+ytKeywords+",genderremixer" + 
 													"&cat="+ytVideoCategory +
 													"&devtags="+developerTag );
@@ -351,7 +351,7 @@ package com.zoharbabin.youtube
 			var atom:String = '<?xml version="1.0"?>';
 			atom += '<entry xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xmlns:yt="http://gdata.youtube.com/schemas/2007">';
 			atom += '<media:group><media:title type="plain">'+ytVideoName+'</media:title>';
-			atom += '<media:description type="plain">'+ytVideoDescription+'</media:description>';
+			atom += '<media:description type="plain">'+ytVideoDescription+' --- This transformative remix work constitutes a fair use of any copyrighted material as provided for in section 107 of the US copyright law.'+'</media:description>';
 			atom += '<media:category scheme="http://gdata.youtube.com/schemas/2007/categories.cat">'+ytVideoCategory+'</media:category>';
 			// Developer tags are not user-visible and provide an easy way for you to find videos uploaded with your developer key.
 			atom += '<media:category scheme="http://gdata.youtube.com/schemas/2007/developertags.cat">'+developerTag+'</media:category>';

@@ -64,6 +64,7 @@
 			import skins.buttons.ClearBtnSkin;
 			import skins.buttons.SaveBtnSkin;
 			import skins.buttons.YouTubeBtnSkin;
+			import skins.droptargets.DropTargetVideo;
 			
 			// * The Kaltura configuration object used to initialize the Kaltura client.
 			private var configuration:KalturaConfig;
@@ -447,15 +448,25 @@
 
 			<s:VGroup>
 				<s:HGroup width="100%" gap="30" horizontalAlign="center">
-					<s:BorderContainer id="videoDrop" width="120" height="90"
-									   dragEnter="dragEnterHandler(event);" 
-									   dragDrop="dragDropHandler(event);">
-						<s:BitmapImage id="videoImg" source="{videoEntry.thumbnailUrl}" width="100%" height="100%" />
-					</s:BorderContainer>
 					<s:BorderContainer id="audioDrop" width="120" height="90"
 									   dragEnter="dragEnterHandler(event);" 
-									   dragDrop="dragDropHandler(event);">
-						<s:BitmapImage id="audioImg" source="{audioEntry.thumbnailUrl}" width="100%" height="100%" />
+									   dragDrop="dragDropHandler(event);"
+									   skinClass="skins.droptargets.DropTargetAudio">
+						<s:BitmapImage id="audioImg" source="{audioEntry.thumbnailUrl}" width="100%" height="100%">
+							<s:mask>
+								<s:BorderContainer cornerRadius="4" width="120" height="90" />
+							</s:mask>
+						</s:BitmapImage>
+					</s:BorderContainer>
+					<s:BorderContainer id="videoDrop" width="120" height="90"
+									   dragEnter="dragEnterHandler(event);" 
+									   dragDrop="dragDropHandler(event);"
+									   skinClass="skins.droptargets.DropTargetVideo">
+						<s:BitmapImage id="videoImg" source="{videoEntry.thumbnailUrl}" width="100%" height="100%">
+							<s:mask>
+								<s:BorderContainer cornerRadius="4" width="120" height="90" />
+							</s:mask>
+						</s:BitmapImage>
 					</s:BorderContainer>
 				</s:HGroup>
 				<s:HGroup width="100%" gap="15" horizontalAlign="center">
@@ -471,9 +482,9 @@
 							width="400" height="300" />
 					<s:Label id="bufferingMsg" color="white" top="150" left="200" fontWeight="bold" visible="false"
 							text="Crunching videos..." horizontalCenter="0" verticalCenter="0" />
-					<s:Button id="savebtn" click="save()" width="70" height="70" top="100" left="130" visible="false"
+					<s:Button id="savebtn" click="save()" width="56" height="56" top="110" left="140" visible="false"
 							  skinClass="skins.buttons.SaveBtnSkin"/>
-					<s:Button id="youtubebtn" click="youtubeUpload()" width="70" height="70" top="100" left="220" visible="false" 
+					<s:Button id="youtubebtn" click="youtubeUpload()" width="56" height="56" top="110" left="210" visible="false" 
 							  skinClass="skins.buttons.YouTubeBtnSkin"/>
 				</s:BorderContainer>
 			</s:VGroup>
