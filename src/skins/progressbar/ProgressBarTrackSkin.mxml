@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SparkSkin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			 xmlns:s="library://ns.adobe.com/flex/spark" 
+			 xmlns:mx="library://ns.adobe.com/flex/mx"
+			 minHeight="9">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			override protected function initializationComplete():void {
+				useChromeColor = true;
+				super.initializationComplete();
+			}
+		]]>
+	</fx:Script>
+	
+	<!-- layer 1: border -->
+	<s:Rect left="0" right="0" top="0" bottom="0" width="199">
+		<s:stroke>
+			<s:LinearGradientStroke rotation="90">
+				<s:GradientEntry color="0xFFFFFF" alpha="0.12" />
+				<s:GradientEntry color="0xFFFFFF" alpha="0.8" />
+			</s:LinearGradientStroke>
+		</s:stroke>
+	</s:Rect>
+	
+	<!-- layer 2: inner border -->
+	<s:Rect left="1" right="1" top="1" bottom="1" >
+		<s:stroke>
+			<s:SolidColorStroke color="0x636363" alpha="1" />
+		</s:stroke>
+	</s:Rect>
+	
+	<!-- layer 3: fill -->
+	<s:Rect left="2" right="2" top="2" bottom="2" >
+		<s:fill>
+			<s:BitmapFill source="@Embed('/assets/intervalslider/middletrack.png')" fillMode="repeat" />
+		</s:fill>
+	</s:Rect>
+	
+	<!-- layer 4: inner shadow -->
+	<s:Rect left="2" top="2" bottom="2" width="1">
+		<s:fill>
+			<s:SolidColor color="0x000000" alpha="0.12" />
+		</s:fill>
+	</s:Rect>
+	<s:Rect right="2" top="2" bottom="2" width="1" >
+		<s:fill>
+			<s:SolidColor color="0x000000" alpha="0.12" />
+		</s:fill>
+	</s:Rect>
+	<s:Rect left="3" top="2" right="3" height="1" >
+		<s:fill>
+			<s:SolidColor color="0x000000" alpha="0.12" />
+		</s:fill>
+	</s:Rect>
+</s:SparkSkin>

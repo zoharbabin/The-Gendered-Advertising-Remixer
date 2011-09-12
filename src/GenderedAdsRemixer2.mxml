@@ -1,0 +1,558 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			   xmlns:s="library://ns.adobe.com/flex/spark" 
+			   xmlns:mx="library://ns.adobe.com/flex/mx" 
+			   applicationComplete="application1_applicationCompleteHandler(event)"
+			   minWidth="955" minHeight="600" 
+			   xmlns:video="com.kaltura.video.*" xmlns:youtube="com.zoharbabin.youtube.*">
+
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+		<youtube:YouTubeDirectUpload id="ytUploader" appName="ClippingApp" 
+									 loginSuccess="ytUploader_loginSuccessHandler(event)"
+									 loginFailed="ytUploader_loginFailedHandler(event)"
+									 uploadComplete="ytUploader_uploadCompleteHandler(event)"
+									 uploadFailed="ytUploader_uploadFailedHandler(event)"
+									 developerKey="AI39si5WWmzMI3O3yPXeLipDKbAzyhGIxLWirhx49EleCJ2dbkDibJArwRTMsjsmYCqcKX8QJMpSRTaErDPvuMieA5qHxTaygQ" 
+									 ytKeywords="{vidKeywords.text}"
+									 ytVideoDescription="{vidDesc.text}"
+									 ytVideoName="{vidName.text}"
+									 gatewayUrl="{gatewayUrl}"
+									 gatewayUrlUpload="{gatewayUrlUpload}"/>
+		
+		<mx:StringValidator id="vidNameValidator" required="true" source="{vidName}" property="text"
+							minLength="1" trigger="{submitBtn}" triggerEvent="click" 
+							requiredFieldError="Please enter a name for the video." />
+		<mx:EmailValidator id="ytEmailValidator" required="true" source="{email}" property="text"
+						   trigger="{submitBtn}" triggerEvent="click" 
+						   requiredFieldError="Please enter a valid email address."/>
+		<mx:StringValidator id="ytPassValidator" required="true" source="{pass}" property="text"
+							trigger="{submitBtn}" triggerEvent="click" 
+							requiredFieldError="Please enter your YouTube account password."/>
+		
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.kaltura.KalturaClient;
+			import com.kaltura.commands.MultiRequest;
+			import com.kaltura.commands.flavorAsset.FlavorAssetGet;
+			import com.kaltura.commands.flavorAsset.FlavorAssetGetByEntryId;
+			import com.kaltura.commands.flavorAsset.FlavorAssetGetWebPlayableByEntryId;
+			import com.kaltura.commands.media.MediaList;
+			import com.kaltura.commands.user.UserLogin;
+			import com.kaltura.config.KalturaConfig;
+			import com.kaltura.events.KalturaEvent;
+			import com.kaltura.vo.KalturaFilterPager;
+			import com.kaltura.vo.KalturaFlavorAsset;
+			import com.kaltura.vo.KalturaMediaEntry;
+			import com.kaltura.vo.KalturaMediaEntryFilter;
+			import com.zoharbabin.bytearray.flv.FlvWizard;
+			
+			import flash.net.navigateToURL;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.DragEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ValidationResultEvent;
+			import mx.managers.DragManager;
+			import mx.utils.ObjectUtil;
+			
+			import skins.YouTubeUploadForm.FormHeadingYTUploadSkin;
+			import skins.YouTubeUploadForm.FormYTUploadSkin;
+			import skins.buttons.ClearBtnSkin;
+			import skins.buttons.SaveBtnSkin;
+			import skins.buttons.YouTubeBtnSkin;
+			
+			// * The Kaltura configuration object used to initialize the Kaltura client.
+			private var configuration:KalturaConfig;
+			// * The Kaltura client object used to call Kaltura services.
+			private var kaltura:KalturaClient;
+			// * The Kaltura partner id of the related account.
+			private var garPartnerId:int = 386171;
+			// * The Kaltura username we'll use for the gar app, this is a very limitted account, all it can do is play.
+			private var garUserId:String = 'r.emixvideos@gmail.com';
+			// * The Kaltura password of the garUserId.
+			private var garUserPassword:String = '123ewqasdcxz!';
+			
+			[Bindable]
+			private var videoEntry:KalturaMediaEntry;
+			
+			[Bindable]
+			private var audioEntry:KalturaMediaEntry;
+			
+			private var nc:NetConnection;
+			private var ns:NetStream;
+			private var videoLdr:URLLoader;
+			private var audioLdr:URLLoader;
+			private var videoBytes:ByteArray = null;
+			private var audioBytes:ByteArray = null;
+			private var mergedBytes:ByteArray = null;
+			private var flvwiz:FlvWizard = new FlvWizard();
+			
+			[Bindable]
+			public var gatewayUrl:String = 'ytapi/ytgateway.php';
+			[Bindable]
+			public var gatewayUrlUpload:String = 'ytapi/savefileanduploadtoyt.php';
+			
+			[Bindable]
+			public var ytUserEmail:String = '';
+			[Bindable]
+			public var ytUserPassword:String = '';
+			
+			private var loginToYouTubeSuccess:Boolean = false;
+			
+			[Bindable]
+			[Embed(source='/assets/errorIcon.png')]
+			private var AlertErrorIcon:Class;
+			
+			private function application1_applicationCompleteHandler(event:FlexEvent):void
+			{
+				Security.allowDomain('*');
+				Security.allowDomain('null');
+				configuration = new KalturaConfig();
+				kaltura = new KalturaClient( configuration );	
+				var loginService:UserLogin = new UserLogin(386171, garUserId, garUserPassword);
+				loginService.addEventListener(KalturaEvent.COMPLETE, sessionStartCompleted);
+				loginService.addEventListener(KalturaEvent.FAILED, serviceFailed);
+				kaltura.post( loginService );
+			}
+			private function sessionStartCompleted (event:KalturaEvent):void {
+				trace ("Session Started: " + event.success);
+				trace (event.data);
+				configuration.ks = event.data.toString();
+				kaltura.ks = event.data.toString();
+				loadVideosList();
+			}
+			private function serviceFailed (event:KalturaEvent):void {
+				trace ("Service Failed: " + event.error.errorMsg);
+			}
+			
+			private function loadVideosList():void {
+				var filter:KalturaMediaEntryFilter = new KalturaMediaEntryFilter();
+				filter.categoriesMatchOr = 'Boys,Girls';//'30-sec>Boys,30-sec>Girls';
+				var pager:KalturaFilterPager = new KalturaFilterPager();
+				pager.pageSize = 500; 
+				var listService:MediaList = new MediaList(filter, pager);
+				listService.addEventListener(KalturaEvent.COMPLETE, listImplListResponse);
+				listService.addEventListener(KalturaEvent.FAILED, serviceFailed);
+				kaltura.post( listService );
+			}
+			private function listImplListResponse (event:KalturaEvent):void {
+				trace ("List Success: " + event.success);
+				var cats:Array;
+				var tmpEntry:KalturaMediaEntry;
+				for each (var entry:Object in event.data.objects) {
+					cats = (entry.categories as String).split(',');
+					entry.category = cats[cats.length-1];
+					tmpEntry = new KalturaMediaEntry();
+					tmpEntry.id = entry.id;
+					tmpEntry.name = entry.name;
+					tmpEntry.thumbnailUrl = entry.thumbnailUrl;
+					tmpEntry.category = entry.category;
+					tmpEntry.dataUrl = "http://cdn.kaltura.com/p/"+garPartnerId+"/sp/"+garPartnerId+"00/flvclipper/entry_id/"+tmpEntry.id+"/";
+					if (tmpEntry.category == 'Girls') {
+						girlsClips.addItem(tmpEntry);
+					} else {
+						boysClips.addItem(tmpEntry);
+					}
+					trace('clip: '+tmpEntry.name + ' : '+tmpEntry.category);
+				}
+			}
+			
+			private function clearPlayback():void {
+				if (ns) ns.pause();
+				playbtn.selected = false;
+				videoScreen.video.clear();
+				hideBuffering();
+				savebtn.visible = false; 
+				youtubebtn.visible = false;
+			}
+			
+			private function showBuffering():void {
+				bufferingMsg.visible = true;
+			}
+			private function hideBuffering():void {
+				bufferingMsg.visible = false;
+			}
+			
+			private function downloadVideoFLVs():void {
+				clearPlayback();
+				videoBytes = null;
+				audioBytes = null;
+				if (videoEntry && audioEntry) {
+					showBuffering();
+					videoLdr = new URLLoader();
+					videoLdr.addEventListener(Event.COMPLETE, video_downloaded);
+					videoLdr.dataFormat = URLLoaderDataFormat.BINARY;
+					videoLdr.load(new URLRequest(videoEntry.dataUrl));
+					audioLdr = new URLLoader();
+					audioLdr.addEventListener(Event.COMPLETE, audio_downloaded);
+					audioLdr.dataFormat = URLLoaderDataFormat.BINARY;
+					audioLdr.load(new URLRequest(audioEntry.dataUrl));
+				}
+			}
+			private function video_downloaded(event:Event):void {
+				videoBytes = videoLdr.data;
+				downloaded();
+			}
+			private function audio_downloaded(event:Event):void {
+				audioBytes = audioLdr.data;
+				downloaded();
+			}
+			private function downloaded():void {
+				if (videoBytes && audioBytes) {
+					buildMerged();
+					hideBuffering();
+					savebtn.visible = false; 
+					youtubebtn.visible = false;
+					trace ("Boom!");
+				}
+			}
+			private function buildMerged():void {
+				videoBytes = flvwiz.extractChannel(videoBytes, FlvWizard.VIDEO_CHANNEL);
+				audioBytes = flvwiz.extractChannel(audioBytes, FlvWizard.SOUND_CHANNEL);
+				mergedBytes = flvwiz.mergeChannels(videoBytes, audioBytes);
+				preparePlayback();
+			}
+			private function preparePlayback():void {
+				clearPlayback();
+				nc = new NetConnection();
+				nc.connect(null);
+				ns = new NetStream(nc);
+				ns.play(null);
+				ns.client = new Object();
+				ns.client.onMetaData = function (...args):void {};
+				ns.checkPolicyFile = true;
+				videoScreen.video.clear();
+				videoScreen.video.smoothing = true;
+				videoScreen.video.attachNetStream(ns);
+				ns.appendBytesAction(NetStreamAppendBytesAction.RESET_BEGIN);
+			}
+
+			private function swap ():void {
+				var tmpEntry:KalturaMediaEntry = videoEntry;
+				videoEntry = audioEntry;
+				audioEntry = tmpEntry;
+				downloadVideoFLVs();
+				clearPlayback();
+				preparePlayback();
+			}
+
+			private function clear ():void {
+				clearPlayback();
+				videoEntry = null;
+				audioEntry = null;
+				videoBytes = null;
+				audioBytes = null;
+				mergedBytes = null;
+			}
+			
+			private function dragEnterHandler(event:DragEvent):void {
+				var initiator:List = event.dragInitiator as List;
+				var target:BorderContainer = event.currentTarget as BorderContainer;
+				var itemsVector:Vector.<Object> = event.dragSource.dataForFormat('itemsByIndex') as Vector.<Object>;
+				var draggedEntry:KalturaMediaEntry = itemsVector[0] as KalturaMediaEntry;
+				if (audioEntry == null && videoEntry == null) {
+					DragManager.acceptDragDrop(target);
+					return;
+				}
+				switch (target.id) {
+					case "videoDrop":
+						if (!audioEntry || (draggedEntry.category != audioEntry.category)) { 
+							DragManager.acceptDragDrop(target);
+						}
+						break;
+					case "audioDrop":
+						if (!videoEntry || (draggedEntry.category != videoEntry.category)) { 
+							DragManager.acceptDragDrop(target);
+						}
+						break;
+				}
+			}
+			
+			private function dragDropHandler(event:DragEvent):void {
+				var itemsVector:Vector.<Object> = event.dragSource.dataForFormat('itemsByIndex') as Vector.<Object>;
+				var target:BorderContainer = event.currentTarget as BorderContainer;
+				switch (target.id) {
+					case "videoDrop":
+						videoEntry = itemsVector[0] as KalturaMediaEntry;
+					break;
+					case "audioDrop":
+						audioEntry = itemsVector[0] as KalturaMediaEntry;
+					break;
+				}
+				downloadVideoFLVs();
+			}
+			
+			private function playback():void {
+				var gotVideo:Boolean = (videoBytes && audioBytes);
+				if (!gotVideo) {
+					playbtn.selected = false;
+					return;
+				}
+				if (playbtn.selected) {
+					savebtn.visible = false; 
+					youtubebtn.visible = false;
+					ns.play(null);
+					ns.appendBytesAction(NetStreamAppendBytesAction.RESET_BEGIN);
+					ns.soundTransform = new SoundTransform(1);
+					ns.appendBytes(mergedBytes);
+					ns.addEventListener(NetStatusEvent.NET_STATUS, netStreamStatus);
+				} else {
+					if (ns) {
+						preparePlayback();
+						savebtn.visible = true; 
+						youtubebtn.visible = true;
+					}
+				}
+			}
+			
+			private function netStreamStatus (event:NetStatusEvent):void {
+				switch (event.info.code) {
+					case 'NetStream.Buffer.Empty':
+						preparePlayback();
+						savebtn.visible = true; 
+						youtubebtn.visible = true;
+						break;
+				}
+			}
+			
+
+			private function tweetbtn_clickHandler(event:MouseEvent):void
+			{
+				// http://twitter.com/share?text=I just made a toy ad mash-up with the Gendered Advertising Remixer. Make your own here: http://bit.ly/GenderRemixer #GenderRemixer
+				var req:URLRequest = new URLRequest ('http://twitter.com/intent/tweet?text=I+just+made+a+toy+ad+mash-up+with+the+Gendered+Advertising+Remixer.+Make+your+own+here%3A+http%3A%2F%2Fbit.ly%2FGenderRemixer+#GenderRemixer');
+				navigateToURL(req,'_blank');
+			}
+			
+			private function save():void {
+				if (!verifyMergedVid()) return;
+				var fR:FileReference = new FileReference();
+				fR.save(mergedBytes, "myGenderedMix.flv");
+			}
+			
+			private function verifyMergedVid():Boolean{
+				if (!mergedBytes) {
+					Alert.show("Please create your mix first :)", "No mix yet");
+					return false;
+				}
+				return true;
+			}
+			
+			private function youtubeUpload():void {
+				if (!verifyMergedVid()) return;
+				ytUploadForm.visible = true;
+			}
+			
+			/// YOUTUBE
+			protected function ytUploader_uploadCompleteHandler(event:Event):void
+			{
+				trace("upload to YouTube completed successfully");
+				hideUploadYouTubeForm();
+				Alert.show("Upload to YouTube Completed Successfully!");
+			}
+			
+			private function hideUploadYouTubeForm():void {
+				ytUploadForm.enabled = true;
+				ytUploadForm.visible = false;
+				uploadprogress.visible = false;
+			}
+			
+			protected function ytUploader_uploadFailedHandler(event:Event):void
+			{
+				trace("upload to YouTube failed");
+				ytUploadForm.enabled = true;
+				ytUploadForm.visible = false;
+				uploadprogress.visible = false;
+				Alert.show("Upload to YouTube Failed.");
+			}
+			
+			protected function uploadToYouTube(event:MouseEvent):void
+			{
+				var vname:Array = vidNameValidator.validate().results;
+				var vemail:Array = ytEmailValidator.validate().results;
+				var vpass:Array = ytPassValidator.validate().results;
+				if (vname == null && vemail == null && vpass == null) {
+					ytUploadForm.enabled = false;
+					uploadprogress.visible = true;
+					ytUploader.youTubeLoginGateway(ytUserEmail, ytUserPassword);
+				}
+			}
+			
+			protected function ytUploader_loginSuccessHandler(event:Event):void
+			{
+				loginToYouTubeSuccess = true;
+				//upload -
+				ytUploader.uploadByteArray(mergedBytes);
+				trace('YouTube login success');
+			}
+			
+			protected function ytUploader_loginFailedHandler(event:Event):void
+			{
+				ytUploadForm.enabled = true;
+				uploadprogress.visible = false;
+				var msg:String = "Your login information seem to be invalid, please try again.";
+				var title:String = "Login to YouTube failed.";
+				Alert.show(msg,title, Alert.OK, null, null, AlertErrorIcon);
+				trace('YouTube login failed');
+			}
+			
+			protected function uploadBtn_clickHandler(event:MouseEvent):void
+			{
+				ytUploadForm.visible = true;
+			}
+
+		]]>
+	</fx:Script>
+	
+	<s:VGroup paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5">
+		
+		<s:HGroup gap="160" >
+			<s:HGroup>
+				<s:Label id="homeBtn" text="HOME" color="silver" 
+						 click="{navigateToURL(new URLRequest('http://genderremixer.com'), '_blank');}"
+						 mouseOver="{homeBtn.setStyle('color','0xF52887');}"
+						 mouseOut="{homeBtn.setStyle('color','silver');}"
+						 fontFamily="Trebuchet MS" fontSize="18" fontWeight="bold"/>
+				<mx:VRule height="18" />
+				<s:Label id="infoBtn" text="INFO" color="silver" 
+						 click="{navigateToURL(new URLRequest('http://www.genderremixer.com/about/'), '_blank');}"
+						 mouseOver="{infoBtn.setStyle('color','0xF52887');}"
+						 mouseOut="{infoBtn.setStyle('color','silver');}"
+						 fontFamily="Trebuchet MS" fontSize="18" fontWeight="bold"/>
+			</s:HGroup>
+			<s:Label text="Gendered Advertising Remixer" color="black" 
+					 fontFamily="Trebuchet MS" fontSize="34" fontWeight="bold"/>
+			<s:Button id="tweetbtn" skinClass="skins.buttons.TweetBtnSkin"
+					  click="tweetbtn_clickHandler(event)"/>
+		</s:HGroup>
+		
+		<mx:HRule width="100%" />
+
+		<s:HGroup>
+			
+			<s:VGroup>
+				<s:Label text="Girl Ads" color="0xF52887" 
+						 fontFamily="Trebuchet MS" fontSize="22" fontWeight="bold"/>
+				<s:List width="276" height="455" id="girlsList"
+						dragEnabled="true" dragMoveEnabled="false"
+						skinClass="skins.lists.girls.ListSkin">
+					<s:dataProvider>
+						<s:ArrayCollection id="girlsClips" />
+					</s:dataProvider>
+				</s:List>
+			</s:VGroup>
+
+			<s:VGroup>
+				<s:HGroup width="100%" gap="30" horizontalAlign="center">
+					<s:BorderContainer id="videoDrop" width="120" height="90"
+									   dragEnter="dragEnterHandler(event);" 
+									   dragDrop="dragDropHandler(event);">
+						<s:BitmapImage id="videoImg" source="{videoEntry.thumbnailUrl}" width="100%" height="100%" />
+					</s:BorderContainer>
+					<s:BorderContainer id="audioDrop" width="120" height="90"
+									   dragEnter="dragEnterHandler(event);" 
+									   dragDrop="dragDropHandler(event);">
+						<s:BitmapImage id="audioImg" source="{audioEntry.thumbnailUrl}" width="100%" height="100%" />
+					</s:BorderContainer>
+				</s:HGroup>
+				<s:HGroup width="100%" gap="15" horizontalAlign="center">
+					<s:ToggleButton id="playbtn" click="playback()" width="70" height="70"
+									skinClass="skins.buttons.PlayBtnSkin" />
+					<s:Button id="swapbtn" click="swap()" width="70" height="70"
+							  skinClass="skins.buttons.SwapBtnSkin"/>
+					<s:Button id="clearbtn" click="clear()" width="70" height="70"
+							  skinClass="skins.buttons.ClearBtnSkin"/>
+				</s:HGroup>
+				<s:BorderContainer width="400" height="300">
+					<video:VideoScreenControl id="videoScreen" 
+							width="400" height="300" />
+					<s:Label id="bufferingMsg" color="white" top="150" left="200" fontWeight="bold" visible="false"
+							text="Crunching videos..." horizontalCenter="0" verticalCenter="0" />
+					<s:Button id="savebtn" click="save()" width="70" height="70" top="100" left="130" visible="false"
+							  skinClass="skins.buttons.SaveBtnSkin"/>
+					<s:Button id="youtubebtn" click="youtubeUpload()" width="70" height="70" top="100" left="220" visible="false" 
+							  skinClass="skins.buttons.YouTubeBtnSkin"/>
+				</s:BorderContainer>
+			</s:VGroup>
+			
+			<s:VGroup>
+				<s:Label text="Boy Ads" color="0x56A5EC" 
+						 fontFamily="Trebuchet MS" fontSize="22" fontWeight="bold" />
+				<s:List width="276" height="455" id="boysList"
+						dragEnabled="true" dragMoveEnabled="false"
+						skinClass="skins.lists.boys.ListSkin">
+					<s:dataProvider>
+						<s:ArrayCollection id="boysClips" />
+					</s:dataProvider>
+				</s:List>
+			</s:VGroup>
+			
+		</s:HGroup>
+
+		<s:HGroup>
+			<s:VGroup>
+				<s:Label width="600" fontFamily="Arial" fontSize="12" fontWeight="bold" 
+					text="INSTRUCTIONS: Drag one clip from each side into the audio and video boxes in the middle of the screen. Clips in the left column are ads directed at girls while clips in the right column are ads directed at boys." />
+				<s:Label width="650" fontFamily="Arial" fontSize="10" color="0x818080" 
+					text="This educational remixing tool constitutes a fair-use of any copyrighted material used as provided for in section 107 of the US copyright law." />
+			</s:VGroup>
+			<s:HGroup verticalAlign="bottom">
+				<mx:Image click="{navigateToURL(new URLRequest('http://corp.kaltura.com'),'_blank');}" id="kallogo"
+						  buttonMode="true" useHandCursor="true" x="933" y="595" source="@Embed(source='/assets/kaltura.png')" alpha="0.4" 
+						  mouseOver="{kallogo.alpha=1}" mouseOut="{kallogo.alpha=0.4}"/>
+				<mx:Image click="{navigateToURL(new URLRequest('http://www.rebelliouspixels.com'),'_blank');}" id="pixellogo"
+						  buttonMode="true" useHandCursor="true" x="822" y="647" width="211" height="39" source="@Embed(source='/assets/rebelliouspixels.png')" alpha="0.4"
+						  mouseOver="{pixellogo.alpha=1}" mouseOut="{pixellogo.alpha=0.4}"/>
+			</s:HGroup>
+		</s:HGroup>
+	</s:VGroup>
+	
+	<s:Form id="ytUploadForm" backgroundColor="white" visible="false"
+			top="100" left="300" skinClass="skins.YouTubeUploadForm.FormYTUploadSkin"
+			defaultButton="{submitBtn}"
+			width="420" height="370">
+		<s:FormHeading label="Upload to " width="100%" 
+					 skinClass="skins.YouTubeUploadForm.FormHeadingYTUploadSkin" />
+		<s:Spacer height="30" />
+		<s:Label fontFamily="Trebuchet MS" fontSize="18" fontWeight="bold" text="Login information:" /> 
+		<s:FormItem label="Email:" color="black" required="true" showErrorTip="true"
+					skinClass="skins.YouTubeUploadForm.FormItemSkin"
+					requiredIndicatorSource="@Embed('/assets/asterisk.png')">
+			<s:TextInput id="email" width="100%" color="black" text="@{ytUserEmail}" />
+		</s:FormItem>
+		<s:FormItem label="Password:" color="black" required="true" showErrorTip="true"
+					skinClass="skins.YouTubeUploadForm.FormItemSkin"
+					requiredIndicatorSource="@Embed('/assets/asterisk.png')">
+			<s:TextInput id="pass" width="100%" color="black" text="@{ytUserPassword}" displayAsPassword="true" />
+		</s:FormItem>
+		<s:Spacer height="15" />
+		<mx:HRule width="100%" />
+		<s:Spacer height="25" />
+		<s:Label fontFamily="Trebuchet MS" fontSize="18" fontWeight="bold" text="Video details:" />
+		<s:FormItem label="Video Name:" color="black" required="true"
+					skinClass="skins.YouTubeUploadForm.FormItemSkin" showErrorTip="true"
+					requiredIndicatorSource="@Embed('/assets/asterisk.png')">
+			<s:TextInput id="vidName" width="100%" color="black" />
+		</s:FormItem>
+		<s:FormItem label="Description:" color="black" 
+					requiredIndicatorSource="@Embed('/assets/asterisk.png')" >
+			<s:TextInput id="vidDesc" width="100%" color="black" />
+		</s:FormItem>
+		<s:FormItem label="Tags:" color="black"  
+					requiredIndicatorSource="@Embed('/assets/asterisk.png')" >
+			<s:TextInput id="vidKeywords" width="100%" color="black" />
+		</s:FormItem>
+		<s:Spacer height="10" />
+		<s:HGroup width="100%" verticalAlign="contentJustify">
+			<s:Button id="submitBtn" label="Upload" click="uploadToYouTube(event)" />
+			<mx:ProgressBar id="uploadprogress" width="100%" chromeColor="0x3e3f47" color="white" 
+							indeterminateSkin="skins.progressbar.ProgressIndeterminateSkin" 
+							indeterminate="true" bottom="0" visible="false" label="Uploading to YouTube..."
+							labelPlacement="center"/>
+			<s:Button id="closeuploadform" label="Close" click="{hideUploadYouTubeForm()}" />
+		</s:HGroup>
+	</s:Form>
+</s:Application>

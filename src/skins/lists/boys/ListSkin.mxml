@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Declarations> 
+		<fx:Component id="dropIndicator"> 
+			<s:Group minWidth="3" minHeight="3" maxWidth="3" maxHeight="3">
+				<s:Line width="8" left="-4" bottom="4">
+					<s:stroke>
+						<s:SolidColorStroke color="0x1482b4" weight="2"/>
+					</s:stroke>
+				</s:Line>
+				
+				<s:Path left="-46" top="-2" scaleX="-1" alpha="0.8" rotation="195"
+						data="M 0 5 L 30 5 26 0 40 8 26 16 30 11 0 11 Z">
+					<s:stroke>
+						<s:LinearGradientStroke rotation="5" weight="1">
+							<s:GradientEntry color="0x117acc"/>
+							<s:GradientEntry color="0x000000"/>
+						</s:LinearGradientStroke>
+					</s:stroke>
+					<s:fill>
+						<s:LinearGradient rotation="90">
+							<s:GradientEntry color="0x004259" />
+							<s:GradientEntry color="0x26ccec" />
+						</s:LinearGradient>
+					</s:fill>
+				</s:Path>
+			</s:Group> 
+		</fx:Component> 
+	</fx:Declarations>
+	
+	<!-- host component -->
+	<fx:Metadata>
+		[HostComponent("spark.components.List")]
+	</fx:Metadata>
+	
+	<!-- states -->
+	<s:states>
+		<s:State name="disabled" />
+		<s:State name="normal" />
+		<s:State name="over" />
+	</s:states>
+	
+	<!-- background -->
+	<s:Rect top="0" right="0" bottom="0" left="0" radiusX="4" radiusY="4" >
+		<s:filters>
+			<s:DropShadowFilter blurX="2" blurY="2" alpha="0.3" distance="2" angle="45" />
+		</s:filters>
+		<s:stroke>
+			<s:SolidColorStroke color="0x56A5EC" weight="0.5" />
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor color="0xffffff" color.over="0xffffff" />
+		</s:fill>
+	</s:Rect>
+	
+	<!-- scroller -->
+	<s:Scroller id="scroller" left="2" top="2" right="2" bottom="2"
+				skinClass="skins.lists.boys.ListScrollerSkin"
+				horizontalScrollPolicy="off" verticalScrollPolicy="on" 
+				minViewportInset="1" focusEnabled="false">
+		<!-- container for data-->
+		<s:DataGroup id="dataGroup" 
+					 itemRenderer="com.kaltura.video.view.ListItemRenderer">
+			<s:layout>
+				<s:TileLayout horizontalAlign="center" horizontalGap="2" 
+					columnWidth="124" columnAlign="justifyUsingGap" />
+			</s:layout>
+		</s:DataGroup>
+		
+	</s:Scroller>
+	
+	<!-- SkinParts
+	name=scroller, type=spark.components.Scroller, required=false
+	name=dropIndicator, type=mx.core.IFactory, required=false
+	name=dataGroup, type=spark.components.DataGroup, required=false
+	name=dataGroup, type=spark.components.DataGroup, required=false
+	-->
+</s:Skin>

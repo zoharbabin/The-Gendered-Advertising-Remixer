@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx">
+	<!-- host component -->
+	<fx:Metadata>
+		[HostComponent("spark.components.Form")]
+	</fx:Metadata>
+	
+	<!-- states -->
+	<s:states>
+		<s:State name="disabled" />
+		<s:State name="normal" />
+		<s:State name="error" />
+	</s:states>
+	
+	<!-- background -->
+	<s:Rect width="100%" height="100%" radiusX="4" radiusY="4" >
+		<s:filters>
+			<s:DropShadowFilter blurX="5" blurY="5" alpha="0.55" distance="0" angle="90" />
+		</s:filters>
+		<s:fill>
+			<s:SolidColor color="white" />
+		</s:fill>
+	</s:Rect>
+	
+	<s:Group id="contentGroup" width="100%" height="100%" >
+		<s:layout>
+			<s:FormLayout paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5" gap="-4" />
+		</s:layout>
+	</s:Group>
+	
+	<!-- SkinParts
+	name=contentGroup, type=spark.components.Group, required=false
+	name=contentGroup, type=spark.components.Group, required=false
+	-->
+</s:Skin>

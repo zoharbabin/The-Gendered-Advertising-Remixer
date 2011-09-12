@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx">
+	<!-- host component -->
+	<fx:Metadata>
+		[HostComponent("spark.components.ToggleButton")]
+	</fx:Metadata>
+	
+	<!-- states -->
+	<s:states>
+		<s:State name="disabledAndSelected" />
+		<s:State name="downAndSelected" />
+		<s:State name="overAndSelected" />
+		<s:State name="upAndSelected" />
+		<s:State name="disabled" />
+		<s:State name="down" />
+		<s:State name="over" />
+		<s:State name="up" />
+	</s:states>
+	
+	<s:BitmapImage source="@Embed('/assets/buttons/play/pause_btn.png')" width="100%" height="100%" smooth="true" alpha="0.8" includeIn="disabledAndSelected" />
+	<s:BitmapImage source="@Embed('/assets/buttons/play/pause_btn.png')" width="100%" height="100%" smooth="true" includeIn="downAndSelected" />
+	<s:BitmapImage source="@Embed('/assets/buttons/play/pause_btn_over.png')" width="100%" height="100%" smooth="true" includeIn="overAndSelected" />
+	<s:BitmapImage source="@Embed('/assets/buttons/play/pause_btn.png')" width="100%" height="100%" smooth="true" includeIn="upAndSelected" />
+	<s:BitmapImage source="@Embed('/assets/buttons/play/play_btn.png')" width="100%" height="100%" smooth="true" alpha="0.8" includeIn="disabled" />
+	<s:BitmapImage source="@Embed('/assets/buttons/play/play_btn.png')" width="100%" height="100%" smooth="true" includeIn="down" />
+	<s:BitmapImage source="@Embed('/assets/buttons/play/play_btn_over.png')" width="100%" height="100%" smooth="true" includeIn="over" />
+	<s:BitmapImage source="@Embed('/assets/buttons/play/play_btn.png')" width="100%" height="100%" smooth="true" includeIn="up" />
+
+</s:Skin>

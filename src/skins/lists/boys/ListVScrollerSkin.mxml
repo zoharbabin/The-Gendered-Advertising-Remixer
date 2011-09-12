@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:fb="http://ns.adobe.com/flashbuilder/2009"
+		xmlns:s="library://ns.adobe.com/flex/spark" 
+		xmlns:mx="library://ns.adobe.com/flex/mx">
+	<!-- host component -->
+	<fx:Metadata>
+		[HostComponent("spark.components.HScrollBar")]
+	</fx:Metadata>
+	
+	<!-- states -->
+	<s:states>
+		<s:State name="inactive" />
+		<s:State name="disabled" />
+		<s:State name="normal" />
+	</s:states>
+	
+	<!--- Defines the skin class for the HScrollBarSkin's track. -->
+	<s:Button id="track" top="0" bottom="0" width="18" right="0"
+			  skinClass="skins.lists.boys.ListVScrollerTrackBtnSkin" />
+	
+	<!--- Defines the skin class for the HScrollBarSkin's thumb. The default skin class is HScrollBarThumbSkin. -->
+	<s:Button id="thumb" focusEnabled="false" visible.inactive="false" 
+			  top="0" width="16" right="0"
+			  skinClass="skins.lists.boys.ListVScrollerThumbBtnSkin"/>
+	<!-- SkinParts
+	name=decrementButton, type=spark.components.Button, required=false
+	name=incrementButton, type=spark.components.Button, required=false
+	name=track, type=spark.components.Button, required=false
+	name=thumb, type=spark.components.Button, required=false
+	-->
+</s:Skin>
