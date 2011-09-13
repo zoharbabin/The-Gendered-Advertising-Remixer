@@ -310,12 +310,13 @@ package com.zoharbabin.youtube
 			var req:URLRequest;
 			var loader:URLLoader = new URLLoader();
 			loader.dataFormat = URLLoaderDataFormat.BINARY;
+			var encdesc:String = encodeURIComponent(ytVideoDescription + ' --- This transformative remix work constitutes a fair use of any copyrighted material as provided for in section 107 of the US copyright law.');
 			req = new URLRequest(gatewayUrlUpload + "?email="+youTubeUserEmail + 
 													"&pass="+youTubePassword +
-													"&title="+ytVideoName +
-													"&desc="+ytVideoDescription + ' --- This transformative remix work constitutes a fair use of any copyrighted material as provided for in section 107 of the US copyright law.' +
-													"&tags="+ytKeywords+",genderremixer" + 
-													"&cat="+ytVideoCategory +
+													"&title="+encodeURIComponent(ytVideoName) +
+													"&desc="+ encdesc +
+													"&tags="+encodeURIComponent(ytKeywords+",genderremixer") + 
+													"&cat="+encodeURIComponent(ytVideoCategory) +
 													"&devtags="+developerTag );
 			req.method = URLRequestMethod.POST;
 			req.contentType = 'application/octet-stream';
@@ -347,15 +348,16 @@ package com.zoharbabin.youtube
 		 * Create the file Atom feed to get upload token from YouTube.
 		 **/
 		private function createAtomFeed():void {
+			var encdesc:String = encodeURIComponent(ytVideoDescription + ' --- This transformative remix work constitutes a fair use of any copyrighted material as provided for in section 107 of the US copyright law.');
 			// Obviously, this shouldn't be hardcoded in a real application!
 			var atom:String = '<?xml version="1.0"?>';
 			atom += '<entry xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xmlns:yt="http://gdata.youtube.com/schemas/2007">';
-			atom += '<media:group><media:title type="plain">'+ytVideoName+'</media:title>';
-			atom += '<media:description type="plain">'+ytVideoDescription+' --- This transformative remix work constitutes a fair use of any copyrighted material as provided for in section 107 of the US copyright law.'+'</media:description>';
-			atom += '<media:category scheme="http://gdata.youtube.com/schemas/2007/categories.cat">'+ytVideoCategory+'</media:category>';
+			atom += '<media:group><media:title type="plain">'+encodeURIComponent(ytVideoName)+'</media:title>';
+			atom += '<media:description type="plain">'+encdesc+'</media:description>';
+			atom += '<media:category scheme="http://gdata.youtube.com/schemas/2007/categories.cat">'+encodeURIComponent(ytVideoCategory)+'</media:category>';
 			// Developer tags are not user-visible and provide an easy way for you to find videos uploaded with your developer key.
-			atom += '<media:category scheme="http://gdata.youtube.com/schemas/2007/developertags.cat">'+developerTag+'</media:category>';
-			atom += '<media:keywords>'+ytKeywords+'</media:keywords></media:group></entry>';
+			atom += '<media:category scheme="http://gdata.youtube.com/schemas/2007/developertags.cat">'+encodeURIComponent(developerTag)+'</media:category>';
+			atom += '<media:keywords>'+encodeURIComponent(ytKeywords)+'</media:keywords></media:group></entry>';
 			
 			var client:HttpClient = new HttpClient();
 			var uri:URI = new URI(uploadMethodUrl);
