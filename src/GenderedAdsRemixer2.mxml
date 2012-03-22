@@ -53,6 +53,7 @@
 			
 			import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
 			import mx.events.DragEvent;
 			import mx.events.FlexEvent;
 			import mx.events.ValidationResultEvent;
@@ -76,6 +77,8 @@
 			private var garUserId:String = 'r.emixvideos@gmail.com';
 			// * The Kaltura password of the garUserId.
 			private var garUserPassword:String = '123ewqasdcxz!';
+			// the two categories to pull from
+			private var categoriesMatchOr:String = 'Boys,Girls';
 			
 			[Bindable]
 			private var videoEntry:KalturaMediaEntry;
@@ -112,6 +115,10 @@
 			{
 				Security.allowDomain('*');
 				Security.allowDomain('null');
+				
+				var params:Object = FlexGlobals.topLevelApplication.parameters;
+				categoriesMatchOr = (params.hasOwnProperty("categories")) ? params.categories : categoriesMatchOr;
+				
 				configuration = new KalturaConfig();
 				kaltura = new KalturaClient( configuration );	
 				var loginService:UserLogin = new UserLogin(386171, garUserId, garUserPassword);
@@ -132,7 +139,7 @@
 			
 			private function loadVideosList():void {
 				var filter:KalturaMediaEntryFilter = new KalturaMediaEntryFilter();
-				filter.categoriesMatchOr = 'Boys,Girls';//'30-sec>Boys,30-sec>Girls';
+				filter.categoriesMatchOr = categoriesMatchOr;
 				var pager:KalturaFilterPager = new KalturaFilterPager();
 				pager.pageSize = 500; 
 				var listService:MediaList = new MediaList(filter, pager);
@@ -153,7 +160,7 @@
 					tmpEntry.thumbnailUrl = entry.thumbnailUrl;
 					tmpEntry.category = entry.category;
 					tmpEntry.dataUrl = "http://cdn.kaltura.com/p/"+garPartnerId+"/sp/"+garPartnerId+"00/flvclipper/entry_id/"+tmpEntry.id+"/";
-					if (tmpEntry.category == 'Girls') {
+					if ((tmpEntry.category as String).indexOf('Girls') > -1) {
 						girlsClips.addItem(tmpEntry);
 					} else {
 						boysClips.addItem(tmpEntry);
