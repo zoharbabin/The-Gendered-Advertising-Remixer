@@ -417,15 +417,19 @@
 	
 	<s:VGroup paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5">
 		
-		<s:HGroup gap="160" >
+		<s:HGroup gap="80" >
 			<s:HGroup>
-				<s:Label id="homeBtn" text="HOME" color="silver" 
+				<mx:Image click="{navigateToURL(new URLRequest('https://github.com/zoharbabin/The-Gendered-Advertising-Remixer'),'_blank');}" id="forkongithub"
+					buttonMode="true" useHandCursor="true" source="@Embed(source='/assets/ForkOnGithub.png')" alpha="0.6" 
+					mouseOver="{forkongithub.alpha=1}" mouseOut="{forkongithub.alpha=0.6}"/>
+				<s:Spacer width="8" />
+				<s:Label id="homeBtn" text="HOME" color="silver" paddingTop="10"
 						 click="{navigateToURL(new URLRequest('http://genderremixer.com'), '_blank');}"
 						 mouseOver="{homeBtn.setStyle('color','0xF52887');}"
 						 mouseOut="{homeBtn.setStyle('color','silver');}"
 						 fontFamily="Trebuchet MS" fontSize="18" fontWeight="bold"/>
-				<mx:VRule height="18" />
-				<s:Label id="infoBtn" text="INFO" color="silver" 
+				<s:Spacer width="8" />
+				<s:Label id="infoBtn" text="INFO" color="silver" paddingTop="10"
 						 click="{navigateToURL(new URLRequest('http://www.genderremixer.com/about/'), '_blank');}"
 						 mouseOver="{infoBtn.setStyle('color','0xF52887');}"
 						 mouseOut="{infoBtn.setStyle('color','silver');}"
